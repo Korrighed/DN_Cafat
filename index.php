@@ -1,8 +1,7 @@
 <?php
-require_once 'class/Database.php';
+require_once __DIR__ . '/autoloader.php';
 
-$db = Database::getInstance();
-$connection = $db->getConnection();
+use App\Database\Database;
 
-
+$db = Database::getInstance()->getConnection();
 echo "<h1>Connexion à la base de données réussie!</h1>";
