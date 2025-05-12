@@ -69,7 +69,7 @@
 						<type></type>
 						<valeur></valeur>
 					</deduction>
-				</deduction>
+				</deductions>
 			<montantAPayer></montantAPayer>
 		</decompte>
 	</corps>

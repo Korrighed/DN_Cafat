@@ -8,6 +8,4 @@ CONCAT(
 		</periode>
 </doc>'
 ) AS xml_output
-INTO OUTFILE 'D:/Travail/DevWeb/DN_Cafat/tempalte - Copie.xml'
--- Notez que nous n'utilisons pas FIELDS TERMINATED BY ou ENCLOSED BY ici
-LINES TERMINATED BY '\n'
+
