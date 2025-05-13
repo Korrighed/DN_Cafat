@@ -133,7 +133,7 @@ class Decompte
         INNER JOIN bulletin b ON ct.bulletin_id = b.id
         INNER JOIN societe s ON 1=1
         WHERE 
-            ct.type_cotisation IS NOT NULL 
+            ct.type_cotisation IS NOT NULL
             AND ct.base > 0
         GROUP BY ct.type_cotisation, ct.tranche
         HAVING SUM(CASE
