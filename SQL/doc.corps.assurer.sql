@@ -2,7 +2,7 @@ USE ecfc6;
 
 SELECT CONCAT(
 '
-  <assurer>
+<assurer>
     <numero>', s.numcafat, '</numero>
     <nom>', UPPER(s.nom), '</nom>
     <prenoms>', UPPER(s.prenom), '</prenoms>
