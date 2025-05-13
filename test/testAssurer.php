@@ -1,13 +1,14 @@
 <?php
+// test/testAssure.php
 require_once __DIR__ . '/../autoloader.php';
 
-use App\Tags\Assurer;
+use App\Tags\Assure;
 
-$assurer = new Assurer();
-$assuresArray = $assurer->generateAssurer();
+echo "Test: Génération des assurés avec la période par défaut (T2 2022)\n";
+$assure = new Assure();
+$assuresArray = $assure->genererAssure();
 
 // Affichage formaté pour vérification
-echo "Test de génération des assurés XML:\n";
 echo "Nombre d'assurés générés: " . count($assuresArray) . "\n\n";
 
 foreach ($assuresArray as $numcafat => $xml) {
