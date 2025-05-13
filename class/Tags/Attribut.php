@@ -3,6 +3,7 @@
 namespace App\Tags;
 
 use App\Database\Database;
+use App\Utils\PeriodeManager;
 use PDO;
 
 /**
@@ -10,44 +11,43 @@ use PDO;
  */
 class Attribut
 {
-    /** @var int L'année de déclaration */
-    private int $annee;
+    /** @var PeriodeManager Gestionnaire de période */
+    private PeriodeManager $periodeManager;
 
-    /** @var int Le trimestre de déclaration (1-4) */
-    private int $trimestre;
+    /** @var bool Si c'est une DN complémentaire */
+    private bool $complementaire = false;
 
-    public function __construct()
+    /**
+     * Constructeur
+     * 
+     * @param PeriodeManager|null $periodeManager Gestionnaire de période (optionnel)
+     */
+    public function __construct(?PeriodeManager $periodeManager = null)
     {
-        $this->annee = 2022;
-        $this->trimestre = 2;
+        $this->periodeManager = $periodeManager ?? new PeriodeManager();
     }
 
     /**
-     * Définit l'année pour la déclaration
-     * 
-     * @param int $annee L'année à utiliser
+     * Définit le gestionnaire de période
+     *
+     * @param PeriodeManager $periodeManager Gestionnaire de période
      * @return self Pour chaînage de méthodes
      */
-    public function setAnnee(int $annee): self
+    public function setPeriodeManager(PeriodeManager $periodeManager): self
     {
-        $this->annee = $annee;
+        $this->periodeManager = $periodeManager;
         return $this;
     }
 
     /**
-     * Définit le trimestre pour la déclaration
+     * Définit si c'est une DN complémentaire
      * 
-     * @param int $trimestre Le trimestre à utiliser (1-4)
+     * @param bool $value Valeur à définir
      * @return self Pour chaînage de méthodes
-     * @throws \Exception Si le trimestre est invalide
      */
-    public function setTrimestre(int $trimestre): self
+    public function setComplementaire(bool $value): self
     {
-        if ($trimestre < 1 || $trimestre > 4) {
-            throw new \Exception("Le trimestre doit être entre 1 et 4");
-        }
-
-        $this->trimestre = $trimestre;
+        $this->complementaire = $value;
         return $this;
     }
 
@@ -58,106 +58,64 @@ class Attribut
      */
     private function getPeriodes(): array
     {
-        $moisDebut = ($this->trimestre - 1) * 3 + 1;
+        $dateDebut = new \DateTime($this->periodeManager->getDateDebut());
+        $dateFin = new \DateTime($this->periodeManager->getDateFin());
+        $interval = new \DateInterval('P1M');
         $periodes = [];
 
-        for ($i = 0; $i < 3; $i++) {
-            $mois = $moisDebut + $i;
-            $periodes[] = sprintf("%04d%02d", $this->annee, $mois);
+        $dateCourante = clone $dateDebut;
+        while ($dateCourante <= $dateFin) {
+            $periodes[] = $dateCourante->format('Ym');
+            $dateCourante->add($interval);
         }
 
         return $periodes;
     }
 
-    public function getTrimestre(): int
-    {
-        return $this->trimestre;
-    }
-
-
-
     /**
-     * Définit à la fois l'année et le trimestre
+     * Vérifie s'il y a des bulletins pour la période
      * 
-     * @param int $annee L'année à utiliser
-     * @param int $trimestre Le trimestre à utiliser (1-4)
-     * @return self Pour chaînage de méthodes
-     * @throws \Exception Si le trimestre est invalide
+     * @return bool True si aucun bulletin n'existe pour la période
      */
-    public function setPeriode(int $annee, int $trimestre): self
-    {
-        $this->setAnnee($annee);
-        $this->setTrimestre($trimestre);
-        return $this;
-    }
-
-    public function getAnnee(): int
-    {
-        return $this->annee;
-    }
-
-
-
-    /**
-     * Génère les balises <attributs> pour tous les salariés ayant des bulletins dans la période
-     * 
-     * @return array Tableau associatif [numcafat => xml]
-     */
-    public function generateAttribut(): array
+    private function pasAssureRemunere(): bool
     {
         $periodes = $this->getPeriodes();
         $periodesStr = implode("', '", $periodes);
 
-        // Obtenir la connexion à la base de données
         $pdo = Database::getInstance()->getConnection();
 
-        // Requête pour obtenir les attributs pour chaque numéro CAFAT de salarié
         $query = "
-            SELECT 
-                s.id,
-                s.numcafat,
-                CASE 
-                    WHEN EXISTS (
-                        SELECT 1 
-                        FROM salaries s2
-                        WHERE DATE_FORMAT(s2.drupture, '%Y%m') IN ('$periodesStr')
-                        AND s2.numcafat = s.numcafat
-                    ) THEN 'true'
-                    ELSE 'false'
-                END AS pasDeReembauche,
-                CASE
-                    WHEN s.numcafat IS NULL OR s.numcafat = 0 THEN 'true'
-                    ELSE 'false'
-                END AS pasAssureRemunere
-            FROM bulletin b
-            INNER JOIN salaries s ON b.salarie_id = s.id
-            WHERE b.periode IN ('$periodesStr')
-            GROUP BY s.id, s.numcafat
+            SELECT COUNT(*) as nbBulletins
+            FROM bulletin
+            WHERE periode IN ('$periodesStr')
         ";
 
         $stmt = $pdo->query($query);
-        $results = [];
+        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-            $id = $row['id'];
-            $numcafat = $row['numcafat'];
-            $pasDeReembauche = $row['pasDeReembauche'];
-            $pasAssureRemunere = $row['pasAssureRemunere'];
+        return $result['nbBulletins'] == 0;
+    }
 
-            $xml = <<<XML
-            <attributs>
-            <complementaire>false</complementaire>
+    /**
+     * Génère le XML pour la balise <attributs>
+     * 
+     * @return string XML pour la balise attributs
+     */
+    public function generateAttribut(): string
+    {
+        // Déterminer si l'employeur n'a pas occupé de personnel pendant la période
+        $pasAssureRemunere = $this->pasAssureRemunere() ? 'true' : 'false';
+
+        // Valeur configurée pour complementaire, autres valeurs fixes
+        $complementaire = $this->complementaire ? 'true' : 'false';
+
+        return <<<XML
+        <attributs>()
+            <complementaire>$complementaire</complementaire>
             <contratAlternance>false</contratAlternance>
             <pasAssureRemunere>$pasAssureRemunere</pasAssureRemunere>
-            <pasDeReembauche>$pasDeReembauche</pasDeReembauche>
-            </attributs>
-            XML;
-
-
-            $key = $numcafat ? $numcafat : "id_" . $id;
-            $results[$key] = $xml;
-        }
-
-        return $results;
+            <pasDeReembauche>false</pasDeReembauche>
+        </attributs>
+        XML;
     }
 }

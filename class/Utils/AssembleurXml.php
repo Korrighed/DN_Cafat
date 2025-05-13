@@ -4,9 +4,9 @@ namespace App\Utils;
 
 use App\Tags\Entete;
 use App\Tags\Periode;
-use App\Tags\Attributs;
-use App\Tags\employeur;
-use App\Tags\Assures;
+use App\Tags\Attribut;
+use App\Tags\Employeur;
+use App\Tags\Assure;
 use App\Tags\Decompte;
 
 
