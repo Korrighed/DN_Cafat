@@ -1,5 +1,4 @@
 <?php
-// test/testAssure.php
 require_once __DIR__ . '/../autoloader.php';
 
 use App\Tags\Assure;

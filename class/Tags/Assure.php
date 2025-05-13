@@ -104,14 +104,14 @@ class Assure
     private function formaterAssureXML(array $assure): string
     {
         // Génération du XML
-        $xml = "<assure>\n";
-        $xml .= "    <numero>{$assure['numero']}</numero>\n";
-        $xml .= "    <nom>{$assure['nom']}</nom>\n";
-        $xml .= "    <prenoms>{$assure['prenom']}</prenoms>\n";
-        $xml .= "    <dateNaissance>" . date('Y-m-d', strtotime($assure['dateNaissance'])) . "</dateNaissance>\n";
-        $xml .= "    <codeAT>PRINCIPAL</codeAT\n";
-        $xml .= "    <nombreHeures>{$assure['nombreHeures']}</nombreHeures>\n";
-        $xml .= "    <remuneration>{$assure['brut']}</remuneration>\n";
+        $xml = "\t\t\t<assure>\n";
+        $xml .= "\t\t\t\t<numero>{$assure['numero']}</numero>\n";
+        $xml .= "\t\t\t\t<nom>{$assure['nom']}</nom>\n";
+        $xml .= "\t\t\t\t<prenoms>{$assure['prenom']}</prenoms>\n";
+        $xml .= "\t\t\t\t<dateNaissance>" . date('Y-m-d', strtotime($assure['dateNaissance'])) . "</dateNaissance>\n";
+        $xml .= "\t\t\t\t<codeAT>PRINCIPAL</codeAT>\n";
+        $xml .= "\t\t\t\t<nombreHeures>{$assure['nombreHeures']}</nombreHeures>\n";
+        $xml .= "\t\t\t\t<remuneration>{$assure['brut']}</remuneration>\n";
 
         // Génération des assiettes pour cet assuré
         $xml .= $this->assureAssiette->genererXMLPourSalarie($assure['salarieId']);
@@ -124,14 +124,14 @@ class Assure
         $dateFin = $this->periodeManager->getDateFin();
 
         if ($dateEmbauche && $dateEmbauche >= $dateDebut && $dateEmbauche <= $dateFin) {
-            $xml .= "    <dateEmbauche>{$dateEmbauche}</dateEmbauche>\n";
+            $xml .= "\t\t\t\t<dateEmbauche>{$dateEmbauche}</dateEmbauche>\n";
         }
 
         if ($dateRupture && $dateRupture >= $dateDebut && $dateRupture <= $dateFin) {
-            $xml .= "    <dateRupture>{$dateRupture}</dateRupture>\n";
+            $xml .= "\t\t\t\t<dateRupture>{$dateRupture}</dateRupture>\n";
         }
 
-        $xml .= "</assure>";
+        $xml .= "\t\t\t</assure>\n\n";
 
         return $xml;
     }

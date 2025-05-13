@@ -10,6 +10,7 @@ use App\Utils\PeriodeManager;
  */
 class Decompte
 {
+
     /**
      * @var \PDO Instance de la connexion PDO
      */
@@ -25,10 +26,10 @@ class Decompte
      * 
      * @param PeriodeManager $periodeManager Gestionnaire de périodes
      */
-    public function __construct(PeriodeManager $periodeManager)
+    public function __construct()
     {
         $this->pdo = Database::getInstance()->getConnection();
-        $this->periodeManager = $periodeManager;
+        $this->periodeManager = new PeriodeManager();
     }
 
     /**
@@ -174,27 +175,27 @@ class Decompte
     {
         $totalCotisations = round($totalCotisations);
 
-        $xml = "<decompte>\n";
-        $xml .= "    <cotisations>\n";
+        $xml = "\t\t<decompte>\n";
+        $xml .= "\t\t\t<cotisations>\n";
 
         foreach ($cotisations as $cotisation) {
-            $xml .= "        <cotisation>\n";
-            $xml .= "            <type>{$cotisation['type_cotisation']}</type>\n";
+            $xml .= "\t\t\t\t<cotisation>\n";
+            $xml .= "\t\t\t\t\t<type>{$cotisation['type_cotisation']}</type>\n";
 
             if (!empty($cotisation['tranche'])) {
-                $xml .= "            <tranche>{$cotisation['tranche']}</tranche>\n";
+                $xml .= "\t\t\t\t\t<tranche>{$cotisation['tranche']}</tranche>\n";
             }
 
-            $xml .= "            <assiette>" . round($cotisation['assiette']) . "</assiette>\n";
-            $xml .= "            <valeur>" . round($cotisation['valeur']) . "</valeur>\n";
-            $xml .= "        </cotisation>\n";
+            $xml .= "\t\t\t\t\t<assiette>" . round($cotisation['assiette']) . "</assiette>\n";
+            $xml .= "\t\t\t\t\t<valeur>" . round($cotisation['valeur']) . "</valeur>\n";
+            $xml .= "\t\t\t\t</cotisation>\n";
         }
 
-        $xml .= "    </cotisations>\n";
-        $xml .= "    <totalCotisations>{$totalCotisations}</totalCotisations>\n";
-        $xml .= "    <deductions></deductions>\n";
-        $xml .= "    <montantAPayer>{$totalCotisations}</montantAPayer>\n";
-        $xml .= "</decompte>";
+        $xml .= "\t\t\t</cotisations>\n\n";
+        $xml .= "\t\t\t<totalCotisations>{$totalCotisations}</totalCotisations>\n\n";
+        $xml .= "\t\t\t<deductions></deductions>\n";
+        $xml .= "\t\t\t<montantAPayer>{$totalCotisations}</montantAPayer>\n";
+        $xml .= "\t\t</decompte>\n";
 
         return $xml;
     }

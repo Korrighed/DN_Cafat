@@ -48,6 +48,7 @@ class AssureAssiette
     public function genererXMLPourSalarie(int $salarieId, ?string $periode = null): string
     {
         try {
+            // Récupérons les données brutes des assiettes plutôt que de générer le XML via SQL
             $pdo = Database::getInstance()->getConnection();
 
             $whereClause = "b.salarie_id = :salarie_id";
@@ -62,98 +63,83 @@ class AssureAssiette
                 $params[':fin'] = $this->periodeManager->getPeriodeFin();
             }
 
-            $sql = $this->construireRequete($whereClause);
+            $sql = "
+                SELECT 
+                    type_identifier AS type,
+                    tranche,
+                    ROUND(base) AS valeur
+                FROM (
+                    SELECT 
+                        l.base,  
+                        CASE 
+                            WHEN r.libelle LIKE '%RUAMM%' THEN 'RUAMM'
+                            WHEN r.libelle LIKE '%FIAF%' THEN 'FIAF'
+                            WHEN r.libelle LIKE '%retraite%' THEN 'RETRAITE'
+                            WHEN r.libelle LIKE '%Cho%' THEN 'CHOMAGE'
+                            WHEN r.libelle LIKE '%Accident du travail%' THEN 'ATMP'
+                            WHEN r.libelle LIKE '%FDS Financement Dialogue Social%' THEN 'FDS'
+                            WHEN r.libelle LIKE '%Formation Professionnelle continue%' THEN 'FORMATION_PROFESSIONNELLE'
+                            WHEN r.libelle LIKE '%Fond Social de l%Habitat%' THEN 'FSH'
+                            WHEN r.libelle LIKE 'C.R.E.%' THEN 'CRE'
+                            WHEN r.libelle LIKE '%CHOMAGE%' THEN 'CHOMAGE'
+                        END AS type_identifier,
+                        
+                        CASE 
+                            WHEN r.libelle LIKE '%RUAMM%Tranche 1%' THEN 'TRANCHE_1'
+                            WHEN r.libelle LIKE '%RUAMM%Tranche 2%' THEN 'TRANCHE_2'
+                            ELSE ''
+                        END AS tranche
+                    FROM ligne_bulletin l
+                    INNER JOIN bulletin b ON l.bulletin_id = b.id
+                    INNER JOIN salaries s ON b.salarie_id = s.id
+                    INNER JOIN rubrique r ON l.rubrique_id = r.id
+                    WHERE 
+                        $whereClause
+                        AND (
+                            r.libelle LIKE '%RUAMM%' OR 
+                            r.libelle LIKE 'C.R.E.%' OR 
+                            r.libelle LIKE '%retraite%' OR
+                            r.libelle LIKE '%FIAF%' OR
+                            r.libelle LIKE '%Accident du travail%' OR
+                            r.libelle LIKE '%FDS Financement Dialogue Social%' OR
+                            r.libelle LIKE '%Formation Professionnelle continue%' OR
+                            r.libelle LIKE '%Fond Social de l%Habitat%' OR
+                            r.libelle LIKE '%CHOMAGE%'
+                        )
+                ) AS assiette_types
+                WHERE type_identifier IS NOT NULL AND base IS NOT NULL AND base > 0
+            ";
+
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
 
-            $result = $stmt->fetch();
-            return $result['xml_output'] ?? '';
+            $assiettes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            if (empty($assiettes)) {
+                return '';
+            }
+
+            // Générer le XML avec l'indentation appropriée
+            $xml = "\t\t\t\t<assiettes>\n";
+
+            foreach ($assiettes as $assiette) {
+                $xml .= "\t\t\t\t\t<assiette>\n";
+                $xml .= "\t\t\t\t\t\t<type>{$assiette['type']}</type>\n";
+
+                if (!empty($assiette['tranche'])) {
+                    $xml .= "\t\t\t\t\t\t<tranche>{$assiette['tranche']}</tranche>\n";
+                }
+
+                $xml .= "\t\t\t\t\t\t<valeur>{$assiette['valeur']}</valeur>\n";
+                $xml .= "\t\t\t\t\t</assiette>\n";
+            }
+
+            $xml .= "\t\t\t\t\t</assiettes>\n";
+
+            return $xml;
         } catch (\Exception $e) {
             error_log("Erreur lors de la génération du XML des assiettes: " . $e->getMessage());
             return '';
         }
-    }
-
-    /**
-     * Construit la requête SQL pour extraire les données des assiettes
-     * 
-     * @param string $whereClause Clause WHERE supplémentaire
-     * @return string Requête SQL complète
-     */
-    private function construireRequete(string $whereClause): string
-    {
-        // Le reste de la méthode reste inchangé
-        return "WITH assiette_types AS (
-            SELECT 
-                l.id,
-                l.bulletin_id,
-                b.salarie_id,
-                s.numcafat,
-                b.periode,
-                l.base,  
-                r.libelle,
-                CASE 
-                    WHEN r.libelle LIKE '%RUAMM%' THEN 'RUAMM'
-                    WHEN r.libelle LIKE '%FIAF%' THEN 'FIAF'
-                    WHEN r.libelle LIKE '%retraite%' THEN 'RETRAITE'
-                    WHEN r.libelle LIKE '%Cho%' THEN 'CHOMAGE'
-                    WHEN r.libelle LIKE '%Accident du travail%' THEN 'ATMP'
-                    WHEN r.libelle LIKE '%FDS Financement Dialogue Social%' THEN 'FDS'
-                    WHEN r.libelle LIKE '%Formation Professionnelle continue%' THEN 'FORMATION_PROFESSIONNELLE'
-                    WHEN r.libelle LIKE '%Fond Social de l%Habitat%' THEN 'FSH'
-                    WHEN r.libelle LIKE 'C.R.E.%' THEN 'CRE'
-                    WHEN r.libelle LIKE '%CHOMAGE%' THEN 'CHOMAGE'
-                END AS type_identifier,
-                
-                -- Détermine la tranche pour RUAMM
-                CASE 
-                    WHEN r.libelle LIKE '%RUAMM%Tranche 1%' THEN 'TRANCHE_1'
-                    WHEN r.libelle LIKE '%RUAMM%Tranche 2%' THEN 'TRANCHE_2'
-                    ELSE ''
-                END AS tranche
-            FROM ligne_bulletin l
-            INNER JOIN bulletin b ON l.bulletin_id = b.id
-            INNER JOIN salaries s ON b.salarie_id = s.id
-            INNER JOIN rubrique r ON l.rubrique_id = r.id
-            WHERE 
-                $whereClause
-                AND (
-                    r.libelle LIKE '%RUAMM%' OR 
-                    r.libelle LIKE 'C.R.E.%' OR 
-                    r.libelle LIKE '%retraite%' OR
-                    r.libelle LIKE '%FIAF%' OR
-                    r.libelle LIKE '%Accident du travail%' OR
-                    r.libelle LIKE '%FDS Financement Dialogue Social%' OR
-                    r.libelle LIKE '%Formation Professionnelle continue%' OR
-                    r.libelle LIKE '%Fond Social de l%Habitat%' OR
-                    r.libelle LIKE '%CHOMAGE%'
-                )
-        )
-
-        SELECT 
-            at.numcafat,
-            at.periode,
-            CONCAT(
-                CASE
-                    WHEN COUNT(CASE WHEN at.type_identifier IS NOT NULL AND at.base IS NOT NULL AND at.base > 0 THEN 1 ELSE NULL END) > 0 THEN
-                        CONCAT('    <assiettes>',
-                            GROUP_CONCAT(
-                                CASE WHEN at.type_identifier IS NOT NULL AND at.base IS NOT NULL AND at.base > 0 THEN
-                                    CONCAT('
-        <assiette>
-            <type>', at.type_identifier, '</type>',
-                                    CASE WHEN at.tranche != '' THEN CONCAT('
-            <tranche>', at.tranche, '</tranche>') ELSE '' END,
-                                    '
-            <valeur>', LEFT(ROUND(at.base), 18), '</valeur>
-        </assiette>')
-                                ELSE '' END
-                            SEPARATOR ''), '
-    </assiettes>\n')
-                    ELSE ''
-                END
-            ) AS xml_output
-        FROM assiette_types at
-        GROUP BY at.numcafat, at.periode";
     }
 }

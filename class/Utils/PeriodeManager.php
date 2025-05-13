@@ -118,4 +118,34 @@ class PeriodeManager
     {
         return date('Ym', strtotime($this->dateFin));
     }
+
+    /**
+     * Récupère l'année correspondant à la période courante
+     * 
+     * @return int Année de la période
+     */
+    public function getAnnee(): int
+    {
+        return (int)substr($this->dateDebut, 0, 4);
+    }
+
+    /**
+     * Récupère le trimestre correspondant à la période courante
+     * 
+     * @return int Numéro du trimestre (1-4)
+     */
+    public function getTrimestre(): int
+    {
+        $mois = (int)substr($this->dateDebut, 5, 2);
+
+        if ($mois >= 1 && $mois <= 3) {
+            return 1;
+        } elseif ($mois >= 4 && $mois <= 6) {
+            return 2;
+        } elseif ($mois >= 7 && $mois <= 9) {
+            return 3;
+        } else {
+            return 4;
+        }
+    }
 }

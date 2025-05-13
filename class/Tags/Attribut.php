@@ -109,13 +109,13 @@ class Attribut
         // Valeur configurée pour complementaire, autres valeurs fixes
         $complementaire = $this->complementaire ? 'true' : 'false';
 
-        return <<<XML
-        <attributs>()
-            <complementaire>$complementaire</complementaire>
-            <contratAlternance>false</contratAlternance>
-            <pasAssureRemunere>$pasAssureRemunere</pasAssureRemunere>
-            <pasDeReembauche>false</pasDeReembauche>
-        </attributs>
-        XML;
+        $xml = "\t\t<attributs>\n";
+        $xml .= "\t\t\t<complementaire>$complementaire</complementaire>\n";
+        $xml .= "\t\t\t<contratAlternance>false</contratAlternance>\n";
+        $xml .= "\t\t\t<pasAssureRemunere>$pasAssureRemunere</pasAssureRemunere>\n";
+        $xml .= "\t\t\t<pasDeReembauche>false</pasDeReembauche>\n";
+        $xml .= "\t\t</attributs>\n\n";
+
+        return $xml;
     }
 }

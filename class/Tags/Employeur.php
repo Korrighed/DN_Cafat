@@ -45,14 +45,14 @@ class Employeur
             $rid = $ridParts[0];
 
             // Construction du XML
-            $xml = "<employeur>\n";
-            $xml .= "  <numero>{$numero}</numero>\n";
-            $xml .= "  <suffixe>{$suffixe}</suffixe>\n";
-            $xml .= "  <nom>" . strtoupper($employeur['enseigne']) . "</nom>\n";
-            $xml .= "  <rid>{$rid}</rid>\n";
-            $xml .= "  <codeCotisation>001</codeCotisation>\n";
-            $xml .= "  <tauxATPrincipal>{$employeur['tauxat']}</tauxATPrincipal>\n";
-            $xml .= "</employeur>";
+            $xml = "\t\t<employeur>\n";
+            $xml .= "\t\t\t<numero>{$numero}</numero>\n";
+            $xml .= "\t\t\t<suffixe>{$suffixe}</suffixe>\n";
+            $xml .= "\t\t\t<nom>" . strtoupper($employeur['enseigne']) . "</nom>\n";
+            $xml .= "\t\t\t<rid>{$rid}</rid>\n";
+            $xml .= "\t\t\t<codeCotisation>001</codeCotisation>\n";
+            $xml .= "\t\t\t<tauxATPrincipal>{$employeur['tauxat']}</tauxATPrincipal>\n";
+            $xml .= "\t\t</employeur>\n\n";
 
             return $xml;
         } catch (\Exception $e) {

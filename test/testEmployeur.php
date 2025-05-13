@@ -9,5 +9,5 @@ $employeurXML = new Employeur();
 $xmlOutput = $employeurXML->genererEmployeur();
 
 // Affichage du résultat
-echo "Test de la génération du XML Employeur";
+echo "Test de la génération du XML Employeur\n";
 echo $xmlOutput;

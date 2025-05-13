@@ -2,81 +2,64 @@
 
 namespace App\Tags;
 
+use App\Utils\PeriodeManager;
+
 /**
  * Gère la génération de la section <periode> du XML CAFAT
  */
 class Periode
 {
     private string $type = 'TRIMESTRIEL';
-    private int $annee;
-    private int $numero;
+    private PeriodeManager $periodeManager;
 
     /**
-     * Constructeur avec validation des paramètres
-     * 
-     * @param int $annee Année entre 2000 et 3000
-     * @param int $numero Numéro de trimestre entre 1 et 4
-     * @throws \InvalidArgumentException Si les paramètres ne sont pas valides
+     * @param PeriodeManager|null $periodeManager Gestionnaire de période
      */
-    public function __construct(int $annee = 2022, int $numero = 2)
+    public function __construct(?PeriodeManager $periodeManager = null)
     {
-        $this->setAnnee($annee);
-        $this->setNumero($numero);
+        $this->periodeManager = $periodeManager ?? new PeriodeManager();
     }
 
     /**
-     * Définit l'année de la période avec validation
-     * 
-     * @param int $annee Année entre 2000 et 3000
-     * @throws \InvalidArgumentException Si l'année n'est pas valide
+     * @param PeriodeManager $periodeManager Gestionnaire de période
+     * @return self Pour chaînage de méthodes
      */
-    public function setAnnee(int $annee): self
+    public function setPeriodeManager(PeriodeManager $periodeManager): self
     {
-        if ($annee < 2000 || $annee > 3000) {
-            throw new \InvalidArgumentException('L\'année doit être comprise entre 2000 et 3000');
-        }
-
-        $this->annee = $annee;
+        $this->periodeManager = $periodeManager;
         return $this;
     }
 
     /**
-     * Définit le numéro de trimestre avec validation
-     * 
-     * @param int $numero Numéro de trimestre entre 1 et 4
-     * @throws \InvalidArgumentException Si le numéro n'est pas valide
+     * @return int Année
      */
-    public function setNumero(int $numero): self
-    {
-        if ($numero < 1 || $numero > 4) {
-            throw new \InvalidArgumentException('Le numéro du trimestre doit être compris entre 1 et 4');
-        }
-
-        $this->numero = $numero;
-        return $this;
-    }
-
-
     public function getAnnee(): int
     {
-        return $this->annee;
+        return $this->periodeManager->getAnnee();
     }
 
+    /**
+     * @return int Numéro de trimestre
+     */
     public function getNumero(): int
     {
-        return $this->numero;
+        return $this->periodeManager->getTrimestre();
     }
 
-    public function generate(): string
+    /**
+     * @return string Balise XML
+     */
+    public function generatePeriode(): string
     {
+        $annee = $this->getAnnee();
+        $numero = $this->getNumero();
 
-        $xml = <<<XML
-  <periode>
-    <type>{$this->type}</type>
-    <annee>{$this->annee}</annee>
-    <numero>{$this->numero}</numero>
-  </periode>
-XML;
+        $xml = "\t\t<periode>\n";
+        $xml .= "\t\t\t<type>{$this->type}</type>\n";
+        $xml .= "\t\t\t<annee>{$annee}</annee>\n";
+        $xml .= "\t\t\t<numero>{$numero}</numero>\n";
+        $xml .= "\t\t</periode>\n\n";
+
         return $xml;
     }
 }

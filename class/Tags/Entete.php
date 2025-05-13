@@ -20,12 +20,11 @@ class Entete
         $this->pdo = Database::getInstance()->getConnection();
     }
 
-
     /**
      * Génère le fragment XML de l'entête
      * @return string XML formaté
      */
-    public function generate(): string
+    public function generateEnTete(): string
     {
         try {
             $stmt = $this->pdo->query("SELECT enseigne FROM societe LIMIT 1");
@@ -33,26 +32,25 @@ class Entete
             $enseigne = $societe ? strtoupper($societe['enseigne']) : 'ENTREPRISE';
             $dateGeneration = date('Y-m-d\TH:i:s');
 
-            // Construction du XML
-            $xml = <<<XML
-    <entete>
-        <type>DN</type>
-        <version>VERSION_2_0</version>
-        <emetteur>{$enseigne}</emetteur>
-        <dateGeneration>{$dateGeneration}</dateGeneration>
-        <logiciel>
-            <editeur>WEBDEV-2025</editeur>
-            <nom>DECLARATION-NOMINATIVE-MANAGER</nom>
-            <version>1</version>
-            <dateVersion>2023-05-15</dateVersion>
-        </logiciel>
-    </entete>
-XML;
+            // Construction du XML avec indentation explicite
+            $xml = "\t<entete>\n";
+            $xml .= "\t\t<type>DN</type>\n";
+            $xml .= "\t\t<version>VERSION_2_0</version>\n";
+            $xml .= "\t\t<emetteur>{$enseigne}</emetteur>\n";
+            $xml .= "\t\t<dateGeneration>{$dateGeneration}</dateGeneration>\n";
+            $xml .= "\t\t<logiciel>\n";
+            $xml .= "\t\t\t<editeur>WEBDEV-2025</editeur>\n";
+            $xml .= "\t\t\t<nom>DECLARATION-NOMINATIVE-MANAGER</nom>\n";
+            $xml .= "\t\t\t<version>1</version>\n";
+            $xml .= "\t\t\t<dateVersion>2023-05-15</dateVersion>\n";
+            $xml .= "\t\t</logiciel>\n";
+            $xml .= "\t</entete>\n\n";
+
             return $xml;
         } catch (PDOException $e) {
             // Gestion des erreurs
             error_log("Erreur lors de la génération de l'entête XML : " . $e->getMessage());
-            return "<entete>Erreur lors de la génération</entete>";
+            return "\t<entete>Erreur lors de la génération</entete>\n";
         }
     }
 }

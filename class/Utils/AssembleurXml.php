@@ -8,175 +8,70 @@ use App\Tags\Attribut;
 use App\Tags\Employeur;
 use App\Tags\Assure;
 use App\Tags\Decompte;
+use App\Utils\PeriodeManager;
 
-
-class XmlAssembler
+class AssembleurXML
 {
-    /**
-     * @var string L'encodage du document XML
-     */
-    private $encoding;
+    private $periodeManager;
 
     /**
-     * @var array Contient les instances des classes de tags
+     * Constructeur avec un gestionnaire de période optionnel
      */
-    private $tagComponents;
-
-    /**
-     * @var int L'année de la déclaration
-     */
-    private $annee;
-
-    /**
-     * @var int Le numéro de trimestre (1-4)
-     */
-    private $trimestre;
-
-
-
-    /**
-     * Constructeur
-     * 
-     * @param string $encoding Encodage du document XML
-     * @param int $annee Année de la déclaration
-     * @param int $trimestre Numéro du trimestre (1-4)
-     */
-    public function __construct($encoding = "ISO-8859-1", $annee = 2023, $trimestre = 2)
+    public function __construct(?PeriodeManager $periodeManager = null)
     {
-        $this->encoding = $encoding;
-        $this->annee = $annee;
-        $this->trimestre = $trimestre;
-
-        // Initialisation des composants
-        $this->initializeComponents();
+        // Si aucun gestionnaire de période n'est fourni, on en crée un nouveau avec les valeurs par défaut
+        $this->periodeManager = $periodeManager ?? new PeriodeManager();
     }
 
     /**
-     * Initialise les composants de tags XML
+     * Permet de modifier la période après l'instanciation
      */
-    private function initializeComponents()
+    public function setPeriodeManager(PeriodeManager $periodeManager): self
     {
-        $this->tagComponents = [
-            'entete' => new Entete(),
-            'periode' => new Periode($this->annee, 'T', $this->trimestre)
-        ];
-
-        // D'autres composants pourront être ajoutés ici au fur et à mesure
-    }
-
-    /**
-     * Définit l'année de la déclaration
-     * 
-     * @param int $annee
-     * @return self
-     */
-    public function setAnnee($annee)
-    {
-        $this->annee = $annee;
-        $this->updatePeriodeComponent();
+        $this->periodeManager = $periodeManager;
         return $this;
     }
 
     /**
-     * Définit le trimestre de la déclaration
+     * Génère le document XML complet de la déclaration CAFAT
      * 
-     * @param int $trimestre
-     * @return self
+     * @return string Le document XML complet
      */
-    public function setTrimestre($trimestre)
+    public function genererDeclarationComplete(): string
     {
-        if ($trimestre < 1 || $trimestre > 4) {
-            throw new \InvalidArgumentException("Le trimestre doit être entre 1 et 4");
+        // Générer chaque partie du document
+        $entete = (new Entete())->generateEnTete();
+        $periode = (new Periode())->generatePeriode();
+        $attribut = (new Attribut())->generateAttribut();
+        $employeur = (new Employeur())->genererEmployeur();
+
+        // Pour les assurés, nous avons un tableau indexé par numcafat, nous devons les concaténer
+        $assure = new Assure();
+        $assuresArray = $assure->genererAssure();
+        $assuresXML = '';
+        foreach ($assuresArray as $xml) {
+            $assuresXML .= $xml;
         }
 
-        $this->trimestre = $trimestre;
-        $this->updatePeriodeComponent();
-        return $this;
-    }
+        // Générer le décompte
+        $decompte = new Decompte();
+        $decompteXML = $decompte->generateDecompte();
 
-    /**
-     * Met à jour le composant de période après changement d'année ou trimestre
-     */
-    private function updatePeriodeComponent()
-    {
-        $this->tagComponents['periode'] = new Periode($this->annee, 'T', $this->trimestre);
-    }
+        // Assembler le document complet
+        $xmlDocument = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n";
+        $xmlDocument .= "<doc>\n";
+        $xmlDocument .= $entete;
+        $xmlDocument .= "\t<corps>\n";
+        $xmlDocument .= $periode;
+        $xmlDocument .= $attribut;
+        $xmlDocument .= $employeur;
+        $xmlDocument .= "\t\t<assures>\n\n";
+        $xmlDocument .= $assuresXML;
+        $xmlDocument .= "\t\t</assures>\n\n";
+        $xmlDocument .= $decompteXML;
+        $xmlDocument .= "\t</corps>\n";
+        $xmlDocument .= "</doc>";
 
-    /**
-     * Ajoute un composant de tag au document
-     * 
-     * @param string $key La clé du composant
-     * @param mixed $component L'instance du composant de tag
-     * @return self
-     */
-    public function addComponent($key, $component)
-    {
-        $this->tagComponents[$key] = $component;
-        return $this;
-    }
-
-    /**
-     * Génère le document XML complet
-     * 
-     * @return string Le document XML assemblé
-     */
-    public function generate()
-    {
-        $xmlOutput = "<?xml version=\"1.0\" encoding=\"{$this->encoding}\"?>\n";
-
-        //Balise globale
-        $xmlOutput .= "<doc>\n";
-
-        // Balise entete
-        if (isset($this->tagComponents['entete'])) {
-            $xmlOutput .= $this->tagComponents['entete']->generate() . "\n";
-        }
-
-        // Ajouter le corps
-        $xmlOutput .= " <corps>\n";
-
-        // Balise periode
-        if (isset($this->tagComponents['periode'])) {
-            $xmlOutput .= $this->tagComponents['periode']->generate() . "\n";
-        }
-
-        // Balises attributs
-        if (isset($this->tagComponents['attributs'])) {
-            $xmlOutput .= $this->tagComponents['attributs']->generate() . "\n";
-        }
-
-        // Balise employeur
-        if (isset($this->tagComponents['employeur'])) {
-            $xmlOutput .= $this->tagComponents['employeur']->generate() . "\n";
-        }
-
-        // Balise assures
-        if (isset($this->tagComponents['assures'])) {
-            $xmlOutput .= $this->tagComponents['assures']->generate() . "\n";
-        }
-
-        // Balise decompte
-        if (isset($this->tagComponents['decompte'])) {
-            $xmlOutput .= $this->tagComponents['decompte']->generate() . "\n";
-        }
-
-        $xmlOutput .= " </corps>\n";
-
-        // Fermer le document
-        $xmlOutput .= "</doc>";
-
-        return $xmlOutput;
-    }
-
-    /**
-     * Sauvegarde le XML généré dans un fichier
-     *
-     * @param string $filePath Chemin où sauvegarder le fichier
-     * @return bool True si la sauvegarde a réussi
-     */
-    public function saveToFile($filePath)
-    {
-        $xmlContent = $this->generate();
-        return file_put_contents($filePath, $xmlContent) !== false;
+        return $xmlDocument;
     }
 }

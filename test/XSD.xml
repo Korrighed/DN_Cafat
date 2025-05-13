@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" 
+           xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <!-- Types simples -->
+    <xs:simpleType name="enumTypeDoc">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="DN"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="enumVersionDoc">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="VERSION_2_0"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="enumTypePeriode">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="TRIMESTRIEL"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="stringMandatoryMax30">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="30"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="stringMandatoryMax70">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="70"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="stringMandatoryMax100">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="0"/>
+            <xs:maxLength value="100"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="anneePeriode">
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="2000"/>
+            <xs:maxInclusive value="3000"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="numeroPeriode">
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="1"/>
+            <xs:maxInclusive value="4"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="integerMandatory7Digit">
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="0"/>
+            <xs:maxInclusive value="9999999"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="integerMandatory3Digit">
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="0"/>
+            <xs:maxInclusive value="999"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="longMandatory10Digit">
+        <xs:restriction base="xs:long">
+            <xs:minInclusive value="0"/>
+            <xs:maxInclusive value="9999999999"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="longMandatory18Digit">
+        <xs:restriction base="xs:long">
+            <xs:minInclusive value="0"/>
+            <xs:maxInclusive value="999999999999999999"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="floatMandatory4Digit2Decimal">
+        <xs:restriction base="xs:decimal">
+            <xs:fractionDigits value="2"/>
+            <xs:totalDigits value="4"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="floatMandatory5Digit2Decimal">
+        <xs:restriction base="xs:decimal">
+            <xs:fractionDigits value="2"/>
+            <xs:totalDigits value="5"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="enumTypeAssiette">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="RUAMM"/>
+            <xs:enumeration value="FIAF"/>
+            <xs:enumeration value="RETRAITE"/>
+            <xs:enumeration value="PRESTATIONS_FAMILIALES"/>
+            <xs:enumeration value="CHOMAGE"/>
+            <xs:enumeration value="ATMP"/>
+            <xs:enumeration value="FDS"/>
+            <xs:enumeration value="FORMATION_PROFESSIONNELLE"/>
+            <xs:enumeration value="CRE"/>
+            <xs:enumeration value="FSH"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="enumTypeCotisation">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="RUAMM"/>
+            <xs:enumeration value="FIAF"/>
+            <xs:enumeration value="RETRAITE"/>
+            <xs:enumeration value="PRESTATIONS_FAMILIALES"/>
+            <xs:enumeration value="CHOMAGE"/>
+            <xs:enumeration value="ATMP_PRINCIPAL"/>
+            <xs:enumeration value="ATMP_SECONDAIRE"/>
+            <xs:enumeration value="FDS"/>
+            <xs:enumeration value="FORMATION_PROFESSIONNELLE"/>
+            <xs:enumeration value="CRE"/>
+            <xs:enumeration value="CCS"/>
+            <xs:enumeration value="FSH"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="enumTypeDeduction">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ACOMPTE"/>
+            <xs:enumeration value="RBS"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="enumTypeTranche">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="TRANCHE_1"/>
+            <xs:enumeration value="TRANCHE_2"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="enumCodeAT">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="00"/>
+            <xs:enumeration value="99"/>
+            <!-- Autres valeurs comme indiqué dans le PDF -->
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="enumCodeCotisation">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="01"/>
+            <xs:enumeration value="02"/>
+            <!-- Autres valeurs comme indiqué dans le PDF -->
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="enumCodeCommune">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="01"/>
+            <xs:enumeration value="02"/>
+            <!-- Autres valeurs comme indiqué dans le PDF -->
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Éléments du document -->
+    <xs:element name="document">
+        <xs:complexType>
+            <xs:all>
+                <xs:element name="entete">
+                    <xs:complexType>
+                        <xs:all>
+                            <xs:element name="type" type="enumTypeDoc"/>
+                            <xs:element name="version" type="enumVersionDoc"/>
+                            <xs:element name="emetteur" type="stringMandatoryMax30"/>
+                            <xs:element name="logicielSource" type="stringMandatoryMax30"/>
+                            <xs:element name="dateGeneration" type="xs:dateTime"/>
+                            <xs:element name="typePeriode" type="enumTypePeriode"/>
+                            <xs:element name="annee" type="anneePeriode"/>
+                            <xs:element name="numero" type="numeroPeriode"/>
+                        </xs:all>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="corps">
+                    <xs:complexType>
+                        <xs:all>
+                            <xs:element name="employeur">
+                                <xs:complexType>
+                                    <xs:all>
+                                        <xs:element name="numero" type="integerMandatory7Digit"/>
+                                        <xs:element name="suffixe" type="integerMandatory3Digit"/>
+                                        <xs:element name="nom" type="stringMandatoryMax70"/>
+                                        <xs:element name="rid" type="longMandatory10Digit"/>
+                                        <xs:element name="codeCotisation" type="enumCodeCotisation"/>
+                                        <xs:element name="tauxATPrincipal" type="floatMandatory4Digit2Decimal" minOccurs="0"/>
+                                        <xs:element name="tauxATSecondaire" type="floatMandatory4Digit2Decimal" minOccurs="0"/>
+                                    </xs:all>
+                                </xs:complexType>
+                            </xs:element>
+                            
+                            <xs:element name="assures">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="assure" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:all>
+                                                    <xs:element name="numero" type="integerMandatory7Digit"/>
+                                                    <xs:element name="nom" type="stringMandatoryMax30"/>
+                                                    <xs:element name="prenoms" type="stringMandatoryMax30"/>
+                                                    <xs:element name="dateNaissance" type="xs:date"/>
+                                                    <xs:element name="codeAT" type="enumCodeAT"/>
+                                                    <xs:element name="etablissementRID" type="integerMandatory3Digit" minOccurs="0"/>
+                                                    <xs:element name="codeCommune" type="enumCodeCommune" minOccurs="0"/>
+                                                    <xs:element name="nombreHeures" type="floatMandatory5Digit2Decimal"/>
+                                                    <xs:element name="remuneration" type="longMandatory18Digit"/>
+                                                    <xs:element name="assiettes">
+                                                        <xs:complexType>
+                                                            <xs:sequence>
+                                                                <xs:element name="assiette" minOccurs="0" maxOccurs="unbounded">
+                                                                    <xs:complexType>
+                                                                        <xs:all>
+                                                                            <xs:element name="type" type="enumTypeAssiette"/>
+                                                                            <xs:element name="tranche" type="enumTypeTranche" minOccurs="0"/>
+                                                                            <xs:element name="valeur" type="longMandatory18Digit"/>
+                                                                        </xs:all>
+                                                                    </xs:complexType>
+                                                                </xs:element>
+                                                            </xs:sequence>
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                    <xs:element name="dateEmbauche" type="xs:date" minOccurs="0"/>
+                                                    <xs:element name="dateRupture" type="xs:date" minOccurs="0"/>
+                                                    <xs:element name="observations" type="stringMandatoryMax100" minOccurs="0"/>
+                                                </xs:all>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                            
+                            <xs:element name="decompte">
+                                <xs:complexType>
+                                    <xs:all>
+                                        <xs:element name="cotisations">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="cotisation" maxOccurs="unbounded">
+                                                        <xs:complexType>
+                                                            <xs:all>
+                                                                <xs:element name="type" type="enumTypeCotisation"/>
+                                                                <xs:element name="tranche" type="enumTypeTranche" minOccurs="0"/>
+                                                                <xs:element name="assiette" type="longMandatory18Digit"/>
+                                                                <xs:element name="valeur" type="longMandatory18Digit"/>
+                                                            </xs:all>
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="totalCotisations" type="longMandatory18Digit" minOccurs="0"/>
+                                        <xs:element name="deductions">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="deduction" minOccurs="0" maxOccurs="unbounded">
+                                                        <xs:complexType>
+                                                            <xs:all>
+                                                                <xs:element name="type" type="enumTypeDeduction"/>
+                                                                <xs:element name="valeur" type="longMandatory18Digit"/>
+                                                            </xs:all>
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="montantAPayer" type="longMandatory18Digit" minOccurs="0"/>
+                                    </xs:all>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:all>
+                    </xs:complexType>
+                </xs:element>
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
