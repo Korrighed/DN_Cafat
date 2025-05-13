@@ -49,7 +49,7 @@ class NommageXml
      * @param int $numeroUnique Numéro unique (défaut: 1)
      * @return string Le nom de fichier conforme
      */
-    public static function genererateName($annee = 2023, $typePeriode = 'T', $numeroPeriode = 2, $numeroUnique = 1)
+    public static function genererateName($annee = 2022, $typePeriode = 'T', $numeroPeriode = 2, $numeroUnique = 1)
     {
 
         if ($numeroPeriode < 1 || $numeroPeriode > 4) {

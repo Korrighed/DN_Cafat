@@ -4,7 +4,7 @@ spl_autoload_register(function ($class) {
     $map = [
         'App\\Database\\' => __DIR__ . '/class/Database/',
         'App\\Tags\\' => __DIR__ . '/class/Tags/',
-        'App\\Utils\\' => __DIR__ . '/class/Utils'
+        'App\\Utils\\' => __DIR__ . '/class/Utils/'
     ];
 
     foreach ($map as $prefix => $base_dir) {

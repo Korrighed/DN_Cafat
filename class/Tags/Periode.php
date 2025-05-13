@@ -18,7 +18,7 @@ class Periode
      * @param int $numero Numéro de trimestre entre 1 et 4
      * @throws \InvalidArgumentException Si les paramètres ne sont pas valides
      */
-    public function __construct(int $annee = 2023, int $numero = 2)
+    public function __construct(int $annee = 2022, int $numero = 2)
     {
         $this->setAnnee($annee);
         $this->setNumero($numero);
