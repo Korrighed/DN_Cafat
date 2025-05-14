@@ -1,14 +1,17 @@
 <?php
-// index.php
+// index.php (modifié pour utiliser les méthodes de PeriodeManager)
 require_once __DIR__ . '/autoloader.php';
 
 use App\Utils\NommageXml;
 use App\Utils\PeriodeManager;
 use App\Utils\AssembleurXml;
+use App\Utils\FileCounter;
 
-// Récupération des valeurs actuelles (par défaut)
-$anneeActuelle = date('Y');
-$trimestreActuel = ceil(date('n') / 3); // Détermine le trimestre actuel (1-4)
+// Créer une instance de PeriodeManager pour obtenir les valeurs par défaut
+$periodeDefaut = new PeriodeManager();
+// Les valeurs par défaut sont déjà configurées dans le constructeur de PeriodeManager
+$anneeActuelle = $periodeDefaut->getAnnee();
+$trimestreActuel = $periodeDefaut->getTrimestre();
 
 // Récupération des valeurs soumises par le formulaire
 $anneeSelectionnee = $_POST['annee'] ?? $anneeActuelle;
@@ -22,7 +25,7 @@ $debugInfo = '';
 // Traitement du formulaire si soumis
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generer'])) {
     try {
-        // Créer un gestionnaire de période pour le trimestre sélectionné
+        // Création d'un nouveau gestionnaire de période avec les valeurs soumises
         $periodeManager = new PeriodeManager();
         $periodeManager->setTrimestre((int)$anneeSelectionnee, (int)$trimestreSelectionne);
 
@@ -35,9 +38,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generer'])) {
         $assembleur = new AssembleurXml($periodeManager);
         $xmlContent = $assembleur->genererDeclarationComplete();
 
-        // Créer le nom de fichier
-        $nommageXml = new NommageXml($periodeManager);
-        $nomFichier = $nommageXml->generateName(1); // 1 est le numéro de séquence
+        // Créer le nom de fichier avec séquence automatique
+        $fileCounter = new FileCounter();
+        $nommageXml = new NommageXml($periodeManager, $fileCounter);
+        $nomFichier = $nommageXml->generateName(); // Utilise le comptage automatique
 
         // Sauvegarder le fichier XML
         $dossier = 'declarations';

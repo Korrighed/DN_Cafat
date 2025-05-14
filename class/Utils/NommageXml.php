@@ -4,6 +4,7 @@ namespace App\Utils;
 
 use App\Database\Database;
 use App\Utils\PeriodeManager;
+use App\Utils\FileCounter;
 
 /**
  * Classe pour gérer la nomenclature des fichiers XML de déclaration CAFAT trimestrielle
@@ -21,13 +22,19 @@ class NommageXml
     private PeriodeManager $periodeManager;
 
     /**
+     * @var FileCounter Instance du compteur de fichiers
+     */
+    private FileCounter $fileCounter;
+
+    /**
      * Constructeur
      * 
      * @param PeriodeManager|null $periodeManager Gestionnaire de périodes
      */
-    public function __construct(?PeriodeManager $periodeManager = null)
+    public function __construct(?PeriodeManager $periodeManager = null, ?FileCounter $fileCounter = null)
     {
         $this->periodeManager = $periodeManager ?? new PeriodeManager();
+        $this->fileCounter = $fileCounter ?? new FileCounter();
     }
 
     /**
@@ -74,17 +81,23 @@ class NommageXml
     /**
      * Génère le nom de fichier pour la déclaration nominative CAFAT trimestrielle
      * en utilisant la période actuellement configurée dans le PeriodeManager
+     * et en incrémentant automatiquement le numéro de séquence
      *
-     * @param int|null $numeroUnique Numéro unique (défaut: 1)
+     * @param int|null $numeroUnique Numéro unique optionnel (si non fourni, auto-incrémenté)
      * @return string Le nom de fichier conforme
      */
-    public function generateName(?int $numeroUnique = 1): string
+    public function generateName(?int $numeroUnique = null): string
     {
         $annee = $this->periodeManager->getAnnee();
         $trimestre = $this->periodeManager->getTrimestre();
 
         if ($trimestre < 1 || $trimestre > 4) {
             throw new \InvalidArgumentException("Numéro de trimestre invalide (doit être entre 1 et 4).");
+        }
+
+        // Si aucun numéro unique n'est fourni, utiliser le compteur automatique
+        if ($numeroUnique === null) {
+            $numeroUnique = $this->fileCounter->getNextSequenceNumber($annee, $trimestre);
         }
 
         // Récupération des informations employeur depuis la base de données
