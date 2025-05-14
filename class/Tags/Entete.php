@@ -27,6 +27,7 @@ class Entete
     public function generateEnTete(): string
     {
         try {
+            date_default_timezone_set('Pacific/Noumea');
             $stmt = $this->pdo->query("SELECT enseigne FROM societe LIMIT 1");
             $societe = $stmt->fetch();
             $enseigne = $societe ? strtoupper($societe['enseigne']) : 'ENTREPRISE';

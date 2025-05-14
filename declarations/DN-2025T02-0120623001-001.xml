@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<doc>
+	<entete>
+		<type>DN</type>
+		<version>VERSION_2_0</version>
+		<emetteur>COMPTAGEST</emetteur>
+		<dateGeneration>2025-05-14T17:51:52</dateGeneration>
+		<logiciel>
+			<editeur>WEBDEV-2025</editeur>
+			<nom>DECLARATION-NOMINATIVE-MANAGER</nom>
+			<version>1</version>
+			<dateVersion>2023-05-15</dateVersion>
+		</logiciel>
+	</entete>
+
+	<corps>
+		<periode>
+			<type>TRIMESTRIEL</type>
+			<annee>2025</annee>
+			<numero>2</numero>
+		</periode>
+
+		<attributs>
+			<complementaire>false</complementaire>
+			<contratAlternance>false</contratAlternance>
+			<pasAssureRemunere>true</pasAssureRemunere>
+			<pasDeReembauche>false</pasDeReembauche>
+		</attributs>
+
+		<employeur>
+			<numero>120623</numero>
+			<suffixe>001</suffixe>
+			<nom>COMPTAGEST</nom>
+			<rid>1256952</rid>
+			<codeCotisation>001</codeCotisation>
+			<tauxATPrincipal>0.72</tauxATPrincipal>
+		</employeur>
+
+		<assures>
+
+		</assures>
+
+		<decompte>
+			<cotisations>
+			</cotisations>
+			<totalCotisations>0</totalCotisations>
+			<deductions></deductions>
+			<montantAPayer>0</montantAPayer>
+		</decompte>
+	</corps>
+</doc>

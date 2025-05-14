@@ -17,9 +17,50 @@ class AssureAssiette
     private $periodeManager;
 
     /**
+     * Plafonds pour chaque type de cotisation
+     * @var array
+     */
+    private const PLAFONDS = [
+        'RUAMM' => 548600,
+        'CHOMAGE' => 390900,
+        'ATMP' => 390900,
+        'FSH' => 329700,
+        'FIAF' => 548600,
+        'RETRAITE_AGIRC' => 468377,
+        'RETRAITE_CEG' => 468377,
+    ];
+
+    /**
+     * Taux de cotisation pour chaque type
+     * @var array
+     */
+    private const TAUX = [
+        'RUAMM' => [
+            'TRANCHE_1' => 0.0285,
+            'TRANCHE_2' => 0.0125,
+        ],
+        'CHOMAGE' => 0.0069,
+        'ATMP' => 0,
+        'FSH' => 0,
+        'FORMATION_PROFESSIONNELLE' => 0,
+        'FIAF' => 0,
+        'RETRAITE_AGIRC' => 0.0315,
+        'RETRAITE_CEG' => 0.0086,
+    ];
+
+    /**
+     * Mapping des types d'identifiants vers les types XML
+     * @var array
+     */
+    private const TYPE_MAPPING = [
+        'RETRAITE_AGIRC' => 'RETRAITE',
+        'RETRAITE_CEG' => 'RETRAITE',
+    ];
+
+    /**
      * Constructeur
      * 
-     * @param PeriodeManager|null 
+     * @param PeriodeManager|null $periodeManager
      */
     public function __construct(?PeriodeManager $periodeManager = null)
     {
@@ -48,7 +89,6 @@ class AssureAssiette
     public function genererXMLPourSalarie(int $salarieId, ?string $periode = null): string
     {
         try {
-            // Récupérons les données brutes des assiettes plutôt que de générer le XML via SQL
             $pdo = Database::getInstance()->getConnection();
 
             $whereClause = "b.salarie_id = :salarie_id";
@@ -65,81 +105,149 @@ class AssureAssiette
 
             $sql = "
                 SELECT 
-                    type_identifier AS type,
-                    tranche,
-                    ROUND(base) AS valeur
-                FROM (
-                    SELECT 
-                        l.base,  
-                        CASE 
-                            WHEN r.libelle LIKE '%RUAMM%' THEN 'RUAMM'
-                            WHEN r.libelle LIKE '%FIAF%' THEN 'FIAF'
-                            WHEN r.libelle LIKE '%retraite%' THEN 'RETRAITE'
-                            WHEN r.libelle LIKE '%Cho%' THEN 'CHOMAGE'
-                            WHEN r.libelle LIKE '%Accident du travail%' THEN 'ATMP'
-                            WHEN r.libelle LIKE '%FDS Financement Dialogue Social%' THEN 'FDS'
-                            WHEN r.libelle LIKE '%Formation Professionnelle continue%' THEN 'FORMATION_PROFESSIONNELLE'
-                            WHEN r.libelle LIKE '%Fond Social de l%Habitat%' THEN 'FSH'
-                            WHEN r.libelle LIKE 'C.R.E.%' THEN 'CRE'
-                            WHEN r.libelle LIKE '%CHOMAGE%' THEN 'CHOMAGE'
-                        END AS type_identifier,
-                        
-                        CASE 
-                            WHEN r.libelle LIKE '%RUAMM%Tranche 1%' THEN 'TRANCHE_1'
-                            WHEN r.libelle LIKE '%RUAMM%Tranche 2%' THEN 'TRANCHE_2'
-                            ELSE ''
-                        END AS tranche
-                    FROM ligne_bulletin l
-                    INNER JOIN bulletin b ON l.bulletin_id = b.id
-                    INNER JOIN salaries s ON b.salarie_id = s.id
-                    INNER JOIN rubrique r ON l.rubrique_id = r.id
-                    WHERE 
-                        $whereClause
-                        AND (
-                            r.libelle LIKE '%RUAMM%' OR 
-                            r.libelle LIKE 'C.R.E.%' OR 
-                            r.libelle LIKE '%retraite%' OR
-                            r.libelle LIKE '%FIAF%' OR
-                            r.libelle LIKE '%Accident du travail%' OR
-                            r.libelle LIKE '%FDS Financement Dialogue Social%' OR
-                            r.libelle LIKE '%Formation Professionnelle continue%' OR
-                            r.libelle LIKE '%Fond Social de l%Habitat%' OR
-                            r.libelle LIKE '%CHOMAGE%'
-                        )
-                ) AS assiette_types
-                WHERE type_identifier IS NOT NULL AND base IS NOT NULL AND base > 0
+                    l.id,
+                    l.bulletin_id,
+                    b.salarie_id,
+                    l.base,  
+                    r.libelle,
+                    CASE 
+                        WHEN r.libelle LIKE '%RUAMM%' THEN 'RUAMM'
+                        WHEN r.libelle LIKE '%FIAF%' THEN 'FIAF'
+                        WHEN r.libelle LIKE '%retraite Agirc%' THEN 'RETRAITE_AGIRC'
+                        WHEN r.libelle LIKE '%retraite CEG%' THEN 'RETRAITE_CEG'
+                        WHEN r.libelle LIKE '%Cho%' THEN 'CHOMAGE'
+                        WHEN r.libelle LIKE '%Accident du travail%' THEN 'ATMP'
+                        WHEN r.libelle LIKE '%FDS Financement Dialogue Social%' THEN 'FDS'
+                        WHEN r.libelle LIKE '%Formation Professionnelle continue%' THEN 'FORMATION_PROFESSIONNELLE'
+                        WHEN r.libelle LIKE '%Fond Social de l%Habitat%' THEN 'FSH'
+                        WHEN r.libelle LIKE 'C.R.E.%' THEN 'CRE'
+                    END AS type_identifier
+                FROM ligne_bulletin l
+                INNER JOIN bulletin b ON l.bulletin_id = b.id
+                INNER JOIN rubrique r ON l.rubrique_id = r.id
+                WHERE 
+                    $whereClause
+                    AND (
+                        r.libelle LIKE '%RUAMM%' OR 
+                        r.libelle LIKE 'C.R.E.%' OR 
+                        r.libelle LIKE '%retraite%' OR
+                        r.libelle LIKE '%FIAF%' OR
+                        r.libelle LIKE '%Accident du travail%' OR
+                        r.libelle LIKE '%FDS Financement Dialogue Social%' OR
+                        r.libelle LIKE '%Formation Professionnelle continue%' OR
+                        r.libelle LIKE '%Fond Social de l%Habitat%' OR
+                        r.libelle LIKE '%CHOMAGE%' OR
+                        r.libelle LIKE '%Cho%'
+                    )
             ";
 
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
 
-            $assiettes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $assiettesData = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-            if (empty($assiettes)) {
+            $assiettesPrepared = $this->preparerAssiettes($assiettesData);
+
+            if (empty($assiettesPrepared)) {
                 return '';
             }
 
-            // Générer le XML avec l'indentation appropriée
-            $xml = "\t\t\t\t<assiettes>\n";
+            $xml = "\t\t\t<assiettes>\n";
 
-            foreach ($assiettes as $assiette) {
-                $xml .= "\t\t\t\t\t<assiette>\n";
-                $xml .= "\t\t\t\t\t\t<type>{$assiette['type']}</type>\n";
+            foreach ($assiettesPrepared as $assiette) {
+                $xml .= "\t\t\t\t<assiette>\n";
+                $xml .= "\t\t\t\t\t<type>{$assiette['type']}</type>\n";
 
-                if (!empty($assiette['tranche'])) {
-                    $xml .= "\t\t\t\t\t\t<tranche>{$assiette['tranche']}</tranche>\n";
+                if (isset($assiette['tranche']) && !empty($assiette['tranche'])) {
+                    $xml .= "\t\t\t\t\t<tranche>{$assiette['tranche']}</tranche>\n";
                 }
 
-                $xml .= "\t\t\t\t\t\t<valeur>{$assiette['valeur']}</valeur>\n";
-                $xml .= "\t\t\t\t\t</assiette>\n";
+                // Formatage de la valeur sans décimales
+                $xml .= "\t\t\t\t\t<valeur>" . (int)$assiette['valeur'] . "</valeur>\n";
+                $xml .= "\t\t\t\t</assiette>\n";
             }
 
-            $xml .= "\t\t\t\t\t</assiettes>\n";
+            $xml .= "\t\t\t</assiettes>\n";
 
             return $xml;
         } catch (\Exception $e) {
             error_log("Erreur lors de la génération du XML des assiettes: " . $e->getMessage());
             return '';
         }
+    }
+
+    /**
+     * Prépare les données d'assiettes pour la génération XML avec calcul des cotisations
+     * 
+     * @param array $assiettesBrutes Données brutes des assiettes
+     * @return array Assiettes préparées pour la génération XML
+     */
+    private function preparerAssiettes(array $assiettesBrutes): array
+    {
+        $assiettesPrepared = [];
+        $assiettesByType = [];
+
+        // Regrouper les assiettes par type pour obtenir la base totale de chaque type
+        foreach ($assiettesBrutes as $assiette) {
+            if (
+                isset($assiette['type_identifier']) && $assiette['type_identifier'] !== null &&
+                isset($assiette['base']) && $assiette['base'] > 0
+            ) {
+                $type = $assiette['type_identifier'];
+
+                if (!isset($assiettesByType[$type])) {
+                    $assiettesByType[$type] = 0;
+                }
+
+                $assiettesByType[$type] += (float)$assiette['base'];
+            }
+        }
+
+        // Appliquer les plafonds et taux spécifiques pour chaque type
+        foreach ($assiettesByType as $typeId => $base) {
+            $base = (float)$base;
+
+            $typeXML = isset(self::TYPE_MAPPING[$typeId]) ? self::TYPE_MAPPING[$typeId] : $typeId;
+
+            // Cas spécial pour RUAMM (deux tranches)
+            if ($typeId === 'RUAMM') {
+                $plafond = self::PLAFONDS[$typeId];
+
+                if ($base <= $plafond) {
+                    // Tranche unique
+                    $assiettesPrepared[] = [
+                        'type' => $typeXML,
+                        'valeur' => round($base * self::TAUX[$typeId]['TRANCHE_1'])
+                    ];
+                } else {
+                    // Deux tranches avec taux différents
+                    $assiettesPrepared[] = [
+                        'type' => $typeXML,
+                        'tranche' => 'TRANCHE_1',
+                        'valeur' => round($plafond * self::TAUX[$typeId]['TRANCHE_1'])
+                    ];
+
+                    $assiettesPrepared[] = [
+                        'type' => $typeXML,
+                        'tranche' => 'TRANCHE_2',
+                        'valeur' => round(($base - $plafond) * self::TAUX[$typeId]['TRANCHE_2'])
+                    ];
+                }
+            }
+            // Pour tous les autres types
+            elseif (isset(self::TAUX[$typeId])) {
+                // Appliquer plafond si défini
+                if (isset(self::PLAFONDS[$typeId])) {
+                    $base = min($base, self::PLAFONDS[$typeId]);
+                }
+
+                $assiettesPrepared[] = [
+                    'type' => $typeXML,
+                    'valeur' => round($base * self::TAUX[$typeId])
+                ];
+            }
+        }
+
+        return $assiettesPrepared;
     }
 }

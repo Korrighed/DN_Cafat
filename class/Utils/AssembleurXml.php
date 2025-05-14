@@ -39,22 +39,25 @@ class AssembleurXML
      */
     public function genererDeclarationComplete(): string
     {
-        // Générer chaque partie du document
+
+        // Génération des parties qui n'utilisent pas PeriodeManager
         $entete = (new Entete())->generateEnTete();
-        $periode = (new Periode())->generatePeriode();
-        $attribut = (new Attribut())->generateAttribut();
         $employeur = (new Employeur())->genererEmployeur();
 
-        // Pour les assurés, nous avons un tableau indexé par numcafat, nous devons les concaténer
-        $assure = new Assure();
+        // Génération des parties qui utilisent PeriodeManager
+        $periode = (new Periode($this->periodeManager))->generatePeriode();
+        $attribut = (new Attribut($this->periodeManager))->generateAttribut();
+
+        // Pour les assurés
+        $assure = new Assure($this->periodeManager);
         $assuresArray = $assure->genererAssure();
         $assuresXML = '';
         foreach ($assuresArray as $xml) {
             $assuresXML .= $xml;
         }
 
-        // Générer le décompte
-        $decompte = new Decompte();
+        // Pour Decompte
+        $decompte = new Decompte($this->periodeManager);
         $decompteXML = $decompte->generateDecompte();
 
         // Assembler le document complet
