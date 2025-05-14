@@ -1,21 +1,29 @@
 <?php
-// index.php (modifié pour utiliser les méthodes de PeriodeManager)
+// index.php (modifié avec avertissement simple)
 require_once __DIR__ . '/autoloader.php';
 
 use App\Utils\NommageXml;
 use App\Utils\PeriodeManager;
 use App\Utils\AssembleurXml;
 use App\Utils\FileCounter;
+use App\Utils\PeriodesDisponibles;
 
-// Créer une instance de PeriodeManager pour obtenir les valeurs par défaut
+// Créer une instance de PeriodeManager pour les valeurs par défaut
 $periodeDefaut = new PeriodeManager();
-// Les valeurs par défaut sont déjà configurées dans le constructeur de PeriodeManager
 $anneeActuelle = $periodeDefaut->getAnnee();
 $trimestreActuel = $periodeDefaut->getTrimestre();
 
 // Récupération des valeurs soumises par le formulaire
 $anneeSelectionnee = $_POST['annee'] ?? $anneeActuelle;
 $trimestreSelectionne = $_POST['trimestre'] ?? $trimestreActuel;
+
+// Vérifier si la période est disponible (pour affichage d'avertissement uniquement)
+$periodeDisponible = PeriodesDisponibles::estDisponible((int)$anneeSelectionnee, (int)$trimestreSelectionne);
+$avertissement = '';
+if (!$periodeDisponible) {
+    $avertissement = "Attention : La période sélectionnée (Trimestre $trimestreSelectionne de l'année $anneeSelectionnee) " .
+        "n'est pas disponible dans la base de données. Les résultats peuvent être incomplets ou vides.";
+}
 
 // Initialisation des variables
 $message = '';
@@ -25,7 +33,7 @@ $debugInfo = '';
 // Traitement du formulaire si soumis
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generer'])) {
     try {
-        // Création d'un nouveau gestionnaire de période avec les valeurs soumises
+        // Création et configuration du gestionnaire de période
         $periodeManager = new PeriodeManager();
         $periodeManager->setTrimestre((int)$anneeSelectionnee, (int)$trimestreSelectionne);
 
@@ -41,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generer'])) {
         // Créer le nom de fichier avec séquence automatique
         $fileCounter = new FileCounter();
         $nommageXml = new NommageXml($periodeManager, $fileCounter);
-        $nomFichier = $nommageXml->generateName(); // Utilise le comptage automatique
+        $nomFichier = $nommageXml->generateName();
 
         // Sauvegarder le fichier XML
         $dossier = 'declarations';
@@ -53,10 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generer'])) {
         if (file_put_contents($cheminComplet, $xmlContent) !== false) {
             $message = "Déclaration générée avec succès : " . $nomFichier;
 
-            // Proposer le téléchargement du fichier
-            $downloadLink = "Télécharger le fichier: <a href='$cheminComplet' download>$nomFichier</a>";
+            // Lien de téléchargement via le script dédié
+            $downloadLink = "Télécharger le fichier: <a href='download.php?file=" . urlencode($nomFichier) . "'>" . htmlspecialchars($nomFichier) . "</a>";
         } else {
-            $message = "Erreur lors de la sauvegarde de la déclaration.";
+            throw new \Exception("Erreur lors de la sauvegarde du fichier");
         }
     } catch (\Exception $e) {
         $message = "Erreur : " . $e->getMessage();
@@ -65,11 +73,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generer'])) {
 ?>
 
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 
 <head>
-    <meta charset="UTF-8">
     <title>Génération Déclaration CAFAT</title>
+    <style>
+        .avertissement {
+            color: red;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        .info-periodes {
+            font-style: italic;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+    </style>
 </head>
 
 <body>
@@ -88,6 +108,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generer'])) {
     <?php endif; ?>
 
     <form method="post" action="">
+        <?php if (!empty($avertissement)): ?>
+            <p class="avertissement"><?php echo $avertissement; ?></p>
+        <?php endif; ?>
+
+        <div class="info-periodes">
+            <p>Périodes disponibles dans la base de données :
+                <?php echo PeriodesDisponibles::getPeriodesDisponiblesTexte(); ?></p>
+        </div>
+
         <div style="margin-bottom: 15px;">
             <label for="trimestre">Trimestre :</label>
             <select name="trimestre" id="trimestre">

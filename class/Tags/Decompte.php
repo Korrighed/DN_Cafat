@@ -265,7 +265,7 @@ class Decompte
         $assietteTranche1 = min($base, self::PLAFONDS['RUAMM_TRANCHE_1']);
         $cotisations[] = [
             'type' => 'RUAMM',
-            'tranche' => '1',
+            'tranche' => 'TRANCHE_1',
             'assiette' => $assietteTranche1,
             'valeur' => $assietteTranche1 * self::TAUX['RUAMM_TRANCHE_1']
         ];
@@ -275,7 +275,7 @@ class Decompte
             $assietteTranche2 = $base - self::PLAFONDS['RUAMM_TRANCHE_1'];
             $cotisations[] = [
                 'type' => 'RUAMM',
-                'tranche' => '2',
+                'tranche' => 'TRANCHE_2',
                 'assiette' => $assietteTranche2,
                 'valeur' => $assietteTranche2 * self::TAUX['RUAMM_TRANCHE_2']
             ];
