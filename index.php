@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generer'])) {
             $message = "Déclaration générée avec succès : " . $nomFichier;
 
             // Lien de téléchargement via le script dédié
-            $downloadLink = "Télécharger le fichier: <a href='download.php?file=" . urlencode($nomFichier) . "'>" . htmlspecialchars($nomFichier) . "</a>";
+            $downloadLink = "Télécharger le fichier: <a href='declarations/" . urlencode($nomFichier) . "' download>" . htmlspecialchars($nomFichier) . "</a>";
         } else {
             throw new \Exception("Erreur lors de la sauvegarde du fichier");
         }
