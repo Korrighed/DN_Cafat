@@ -30,10 +30,8 @@ class Decompte
         'ATMP_PRINCIPAL' => 390900,
         'FSH' => 329700,
         'FIAF' => 548600,
-        'RETRAITE_AGIRC' => 468377,
-        'RETRAITE_CEG' => 468377,
-        'FORMATION_PROFESSIONNELLE' => 390900,
-        'FDS' => 390900
+        'RETRAITE' => 390900,
+        'CRE' => 468377,
     ];
 
     /**
@@ -46,8 +44,7 @@ class Decompte
         'FIAF' => 0.002,
         'CHOMAGE' => 0.0206,
         'FDS' => 0.00075,
-        'RETRAITE_AGIRC' => 0.0787,
-        'RETRAITE_CEG' => 0.0215,
+        'RETRAITE' => 0.1452,
         'ATMP_PRINCIPAL' => 0.0072,
         'FORMATION_PROFESSIONNELLE' => 0.0070,
         'CCS' => 0.03,
@@ -59,8 +56,9 @@ class Decompte
      * @var array
      */
     private const TYPE_MAPPING = [
-        'RETRAITE_AGIRC' => 'RETRAITE',
-        'RETRAITE_CEG' => 'RETRAITE'
+        'COTIS-CAFAT-RETRAITE' => 'RETRAITE',
+        'COTIS-CAFAT-CHOMAGE' => 'CHOMAGE',
+        'COTIS-CAFAT-PRESTATIONS_FAMILIALES' => 'PRESTATIONS_FAMILIALES'
     ];
 
     /**
@@ -117,78 +115,74 @@ class Decompte
             return [];
         }
 
-        // Formatage des périodes pour la clause WHERE
-        $whereClause = "b.periode BETWEEN :debut AND :fin";
-        $params = [':debut' => $periodeDebut, ':fin' => $periodeFin];
-
         $sql = "
+        WITH cotisation_types AS (
             SELECT 
                 l.id,
                 l.bulletin_id,
                 l.base,
-                r.libelle,
-                r.taux_patronal,
+                l.libelle,
                 CASE 
-                    WHEN r.libelle LIKE '%RUAMM%' THEN 'RUAMM'
-                    WHEN r.libelle LIKE '%FIAF%' THEN 'FIAF'
-                    WHEN r.libelle LIKE '%chomage%' THEN 'CHOMAGE'
-                    WHEN r.libelle LIKE '%retraite Agirc%' THEN 'RETRAITE_AGIRC'
-                    WHEN r.libelle LIKE '%retraite CEG%' THEN 'RETRAITE_CEG'
-                    WHEN r.libelle LIKE '%Formation Professionnelle%' THEN 'FORMATION_PROFESSIONNELLE'
-                    WHEN r.libelle LIKE '%CCS%' THEN 'CCS'
-                    WHEN r.libelle LIKE '%FSH%' THEN 'FSH'
-                    WHEN r.libelle LIKE '%AT/MP%' THEN 'ATMP_PRINCIPAL'
-                    WHEN r.libelle LIKE '%FDS%' THEN 'FDS'
-                    ELSE NULL
+                    WHEN l.libelle LIKE '%RUAMM%' THEN 'RUAMM'
+                    WHEN l.libelle LIKE '%FIAF%' THEN 'FIAF'
+                    WHEN l.libelle LIKE 'Cotisations CAFA%' THEN 'COTIS-CAFAT'
+                    WHEN l.libelle LIKE 'C.R.E.%' THEN 'CRE'
+                    WHEN l.libelle LIKE '%FDS Financement Dialogue Social%' THEN 'FDS'
+                    WHEN l.libelle LIKE '%Formation Professionnelle continue%' THEN 'FORMATION_PROFESSIONNELLE'
+                    WHEN l.libelle LIKE '%Accident du travail%' THEN 'ATMP_PRINCIPAL'
+                    WHEN l.libelle LIKE '%CS%' THEN 'CCS'
+                    WHEN l.libelle LIKE '%Fond Social de l%Habitat%' THEN 'FSH'
+                    WHEN l.libelle LIKE '%chomage%' THEN 'CHOMAGE'
                 END AS type_cotisation
             FROM ligne_bulletin l
-            JOIN bulletin b ON l.bulletin_id = b.id
-            JOIN rubrique r ON l.rubrique_id = r.id
+            INNER JOIN bulletin b ON l.bulletin_id = b.id
+            INNER JOIN rubrique r ON l.rubrique_id = r.id
             WHERE 
-                $whereClause
-                AND r.type = 2  -- Type patronal
+                b.periode BETWEEN :debut AND :fin
                 AND (
-                    r.libelle LIKE '%RUAMM%' OR 
-                    r.libelle LIKE '%FIAF%' OR
-                    r.libelle LIKE '%chomage%' OR
-                    r.libelle LIKE '%retraite%' OR
-                    r.libelle LIKE '%Formation%' OR
-                    r.libelle LIKE '%CCS%' OR
-                    r.libelle LIKE '%FSH%' OR
-                    r.libelle LIKE '%AT/MP%' OR
-                    r.libelle LIKE '%FDS%'
+                    l.libelle LIKE '%RUAMM%' OR 
+                    l.libelle LIKE 'C.R.E.%' OR 
+                    l.libelle LIKE 'Cotisations CAFA%' OR
+                    l.libelle LIKE '%FIAF%' OR
+                    l.libelle LIKE '%Accident du travail%' OR
+                    l.libelle LIKE '%FDS Financement Dialogue Social%' OR
+                    l.libelle LIKE '%Formation Professionnelle continue%' OR
+                    l.libelle LIKE '%Fond Social de l%Habitat%' OR
+                    l.libelle LIKE '%CHOMAGE%' OR
+                    l.libelle LIKE '%CS%'
                 )
-        ";
+        ),
+        cotisation_data AS (
+            SELECT 
+                type_cotisation,
+                SUM(base) AS total_base
+            FROM cotisation_types
+            GROUP BY type_cotisation
+        )
+        
+        SELECT 
+            type_cotisation,
+            total_base
+        FROM cotisation_data
+        WHERE total_base > 0
+    ";
 
         try {
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($params);
+            $stmt->execute([':debut' => $periodeDebut, ':fin' => $periodeFin]);
             $resultats = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-            // Regrouper par type de cotisation et additionner les bases
+            // Convertir les résultats dans le format attendu par structurerCotisations
             $cotisationsGroupees = [];
             foreach ($resultats as $resultat) {
-                if (!empty($resultat['type_cotisation'])) {
-                    $type = $resultat['type_cotisation'];
-                    if (!isset($cotisationsGroupees[$type])) {
-                        $cotisationsGroupees[$type] = [
-                            'total_base' => 0,
-                            'taux_total' => 0
-                        ];
-                    }
-
-                    $cotisationsGroupees[$type]['total_base'] += (float)$resultat['base'];
-                    $cotisationsGroupees[$type]['taux_total'] = (float)$resultat['taux_patronal']; // Prend le dernier taux
-                }
+                $cotisationsGroupees[] = [
+                    'type_cotisation' => $resultat['type_cotisation'],
+                    'total_base' => (float)$resultat['total_base'],
+                    'taux_total' => 0 // Non utilisé dans la nouvelle version mais conservé pour compatibilité
+                ];
             }
 
-            return $this->structurerCotisations(array_map(function ($type, $data) {
-                return [
-                    'type_cotisation' => $type,
-                    'total_base' => $data['total_base'],
-                    'taux_total' => $data['taux_total']
-                ];
-            }, array_keys($cotisationsGroupees), $cotisationsGroupees));
+            return $this->structurerCotisations($cotisationsGroupees);
         } catch (\PDOException $e) {
             throw new \RuntimeException("Erreur lors de la récupération des cotisations: " . $e->getMessage());
         }

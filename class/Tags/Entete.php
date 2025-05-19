@@ -42,8 +42,8 @@ class Entete
             $xml .= "\t\t<logiciel>\n";
             $xml .= "\t\t\t<editeur>WEBDEV-2025</editeur>\n";
             $xml .= "\t\t\t<nom>DECLARATION-NOMINATIVE-MANAGER</nom>\n";
-            $xml .= "\t\t\t<version>1</version>\n";
-            $xml .= "\t\t\t<dateVersion>2023-05-15</dateVersion>\n";
+            $xml .= "\t\t\t<version>1.5</version>\n";
+            $xml .= "\t\t\t<dateVersion>2025-05-19</dateVersion>\n";
             $xml .= "\t\t</logiciel>\n";
             $xml .= "\t</entete>\n\n";
 

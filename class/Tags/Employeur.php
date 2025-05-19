@@ -43,6 +43,16 @@ class Employeur
             // Extraction du RID (partie avant le point dans RIDET)
             $ridParts = explode('.', $employeur['ridet']);
             $rid = $ridParts[0];
+            $suffixe = isset($numeroParts[1]) ? $numeroParts[1] : '';
+
+            // Nettoyage du suffixe en supprimant les zéros non significatifs
+            $suffixe = ltrim($suffixe, '0');
+
+            // Si après suppression des zéros, le suffixe est vide, c'est qu'il ne contenait que des zéros
+            if ($suffixe === '') {
+                $suffixe = '0';
+            }
+
 
             // Construction du XML
             $xml = "\t\t<employeur>\n";
